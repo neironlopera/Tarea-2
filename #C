@@ -1,0 +1,196 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Diagnostics;
+using System.Runtime.InteropServices;       // Clase para poder comunicarnor con la DLL
+using MecaniqueUK;                          // Clase con las funciones definidas mcHID.dll
+
+namespace WindowsFormsApp1Tarea1
+{
+    public partial class Form1 : Form
+    {
+        /***************************************************/
+        // Variables definidas por el usuario.
+        UInt32 controlador;
+        uint ADCValue1 = 0;
+        //uint ADCValue2 = 0;
+        uint cont;
+        /***************************************************/
+        public Form1()
+        {
+            InitializeComponent();
+        }
+        private void Dispositivo_Conectado(UInt32 handle)
+        {
+            if (EasyHID.GetVendorID(handle) == EasyHID.VENDOR_ID && EasyHID.GetProductID(handle) == EasyHID.PRODUCT_ID)
+            {
+                // Si el handler ha encontrado un dispositivo conectado...
+                EasyHID.SetReadNotify(handle, true); // Activa el sistema de notificaciones.
+
+                controlador = handle;
+
+                Mensajes_USB.Items.Add("Dispositivo USB, conectado.");
+            }
+        }
+
+        private void Dispositivo_desconectado(UInt32 handle)
+        {
+            if (EasyHID.GetVendorID(handle) == EasyHID.VENDOR_ID && EasyHID.GetProductID(handle) == EasyHID.PRODUCT_ID)
+            {
+                Mensajes_USB.Items.Add("Dispositivo USB, desconectado.");
+                Conectar.BackColor = Color.Red;
+                Conectar.ForeColor = Color.White;
+                Conectar.Text = "Conectar";
+                EasyHID.Disconnect();
+
+            }
+        }
+
+        private void Lee_datos(UInt32 In_handle)
+        {
+            byte[] BufferINP = new byte[EasyHID.BUFFER_IN_SIZE]; // Declaramos el buffer de entrada.
+            if ((EasyHID.Read(In_handle, out BufferINP)) == true) // Si hay datos, los procesamos...
+            {
+                ADCValue1 = (uint)(BufferINP[5] << 8) + BufferINP[6];
+                ADC.Value = (int)ADCValue1;
+            }
+
+        }
+        protected override void WndProc(ref Message message)
+        {
+            // Interceptamos los mensajes de windows.
+            if (message.Msg == EasyHID.WM_HID_EVENT) // Si ha ocurrido algún evento...
+            {
+                switch (message.WParam.ToInt32()) // Intercepta el mensaje y opera según el valor recibido....
+                {
+                    case EasyHID.NOTIFY_PLUGGED:
+                        Dispositivo_Conectado((UInt32)message.LParam.ToInt32()); // Se ha conectado un dispositivo.
+                        break;
+                    case EasyHID.NOTIFY_UNPLUGGED:
+                        Dispositivo_desconectado((UInt32)message.LParam.ToInt32()); // Se ha desconectado un dispositivo.
+                        break;
+                    case EasyHID.NOTIFY_READ:
+                        Lee_datos((UInt32)message.LParam.ToInt32()); // Hay datos en el buffer de entrada.
+                        break;
+                }
+            }
+            base.WndProc(ref message);
+        }
+        private void TextBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Conectar_Click(object sender, EventArgs e)
+        {
+            EasyHID.Connect(Handle);
+            Conectar.Text = "Dispositivo Conectado";
+            Conectar.BackColor = Color.GreenYellow;
+            Conectar.ForeColor = Color.Black;
+        }
+
+        private void Promedio_Click(object sender, EventArgs e)
+        {
+ 
+            int num1, num2, num3, resul;
+            num1 = int.Parse(Num1.Text);
+            num2 = int.Parse(Num2.Text);
+            num3 = int.Parse(Num3.Text);
+            resul = (num1 + num2 + num3) / 3;
+            Resultado.Text = resul.ToString();
+        }
+
+        private void Num1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if(Char.IsDigit(e.KeyChar))
+                {
+                e.Handled = false;
+            }
+            else if(Char.IsControl(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else if(Char.IsPunctuation(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void Num2_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (Char.IsDigit(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else if (Char.IsControl(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else if (Char.IsPunctuation(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void Num3_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (Char.IsDigit(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else if (Char.IsControl(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else if (Char.IsPunctuation(e.KeyChar))
+            {
+                e.Handled = false;
+            }
+            else
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            pictureBox1.Image = Image.FromFile("dbz.jpg");
+            cont = 1;
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            EasyHID.Disconnect();
+        }
+
+        private void Cam_imagen_Click(object sender, EventArgs e)
+        {
+            switch(cont)
+            {
+                case 1:
+                    pictureBox1.Image = Image.FromFile("ima_graciosas.jpg");
+                    cont++;
+                    break;
+
+                case 2:
+                    pictureBox1.Image = Image.FromFile("dbz.jpg");
+                    cont = 1;
+                    break;
+            }
+        }
+    }
+}
